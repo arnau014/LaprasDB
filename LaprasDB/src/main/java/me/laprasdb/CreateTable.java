@@ -1,5 +1,6 @@
 package me.laprasdb;
 
+import java.lang.reflect.Array;
 import java.util.*;
 
 /**
@@ -8,11 +9,11 @@ import java.util.*;
 public class CreateTable {
 
     private final long id;
-    private final String content;
+    private final String[] content;
     // The table is a map with the column names as keys and the values are ArrayLists of the content
-    private Map<String, ArrayList<Object>> table;
+    private Map<String, Map<String, Object>> table;
 
-    public CreateTable(long id, String content) {
+    public CreateTable(long id, String[] content) {
         this.id = id;
         this.content = content;
         this.table = new HashMap();
@@ -21,7 +22,11 @@ public class CreateTable {
     }
 
     // Placeholder method to create the file
-    public void newTable(String name, Map<String, ArrayList<Object>> table){
+    public void newTable(String[] name, Map<String, Map<String, Object>> table){
+        System.out.println("Arribo aqui amb el nom");
+        System.out.println(name[0]);
+
+
 
     }
 
@@ -29,11 +34,11 @@ public class CreateTable {
         return id;
     }
 
-    public String getContent() {
+    public String[] getContent() {
         return content;
     }
 
-    public Map<String, ArrayList<Object>> getTable() {
+    public Map<String, Map<String, Object>> getTable() {
         return table;
     }
 }
