@@ -13,12 +13,12 @@ public class Controller {
 
     /**
      * Creates a new table
-     * @param tableName
+     * @param values
      * @return
      */
     @RequestMapping("/create")
-    public CreateTable create(@RequestParam(value="name", defaultValue="table1") String tableName) {
-        return new CreateTable(counter.incrementAndGet(), tableName);
+    public CreateTable create(@RequestParam String[] values) {
+        return new CreateTable(counter.incrementAndGet(), values);
     }
 
 
