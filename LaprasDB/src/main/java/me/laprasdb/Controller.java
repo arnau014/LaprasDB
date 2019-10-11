@@ -1,9 +1,13 @@
 package me.laprasdb;
 
-import java.util.concurrent.atomic.AtomicLong;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 @RestController
 public class Controller {
@@ -11,14 +15,12 @@ public class Controller {
     private static final String template = "Created table %s";
     private final AtomicLong counter = new AtomicLong();
 
-    /**
-     * Creates a new table
-     * @param values
-     * @return
-     */
-    @RequestMapping("/create")
-    public CreateTable create(@RequestParam String[] values) {
-        return new CreateTable(counter.incrementAndGet(), values);
+    @RequestMapping(value = "/create", method = RequestMethod.POST)
+    public CreateTable create(@RequestBody Map<String, Object> table ) {
+        String tablename = table.get("tablename").toString();
+        ArrayList<String> columns = (ArrayList<String>) table.get("columns");
+
+        return new CreateTable(tablename, columns);
     }
 
 
