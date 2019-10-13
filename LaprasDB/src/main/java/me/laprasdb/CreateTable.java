@@ -13,7 +13,7 @@ import java.util.Map;
  */
 public class CreateTable {
 
-    private Map<String, Map<String, Object>> table;
+    private Map<String, Object> table;
 
     public CreateTable(String tableName, ArrayList<String> columnNames) throws IOException {
         //create ObjectMapper instance
@@ -29,7 +29,7 @@ public class CreateTable {
         Map<String, Map<Integer, Object>> columns = new HashMap<>();
         Map<Integer, Object> colInfo = new HashMap<>();
 
-        for (String colName: columnNames){
+        for (String colName : columnNames) {
             columns.put(colName, colInfo);
         }
 
@@ -42,10 +42,9 @@ public class CreateTable {
 
         //write Map object to json file
         objectMapper.writeValue(new File("tables/" + tableName + ".json"), table);
-
     }
 
-    public Map<String, Map<String, Object>> getTable() {
+    public Map<String, Object> getTable() {
         return table;
     }
 }
