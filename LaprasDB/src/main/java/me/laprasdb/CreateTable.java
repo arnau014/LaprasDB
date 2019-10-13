@@ -8,9 +8,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Creates a new table
- */
 public class CreateTable {
 
     private Map<String, Object> table;
