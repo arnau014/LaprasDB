@@ -1,13 +1,22 @@
 package me.laprasdb;
 
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import org.json.JSONArray;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 
+import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import org.json.simple.JSONObject;
 
 @RestController
 public class Controller {
@@ -19,6 +28,80 @@ public class Controller {
         return new CreateTable(tablename, columns);
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @RequestMapping(path = "table/{tablename}", method = RequestMethod.GET)
+    public @ResponseBody JSONObject showtable(@PathVariable String tablename) throws IOException {
+
+        File dir = new File("tables");
+        JSONObject result;
+        //String prettyFormatted;
+        File[] matches = dir.listFiles(new FilenameFilter()
+        {
+            public boolean accept(File dir, String name)
+            {
+                return name.equals(tablename+".json");
+            }
+        });
+
+        if(matches.length==0){
+            throw new MyResourceNotFoundException("Trying to fetch a non-exixsting table");
+        }else{
+            result = new ObjectMapper().readValue(matches[0], JSONObject.class);
+
+        }
+        return result;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @RequestMapping(path = "table/{tablename}/{columnname}", method = RequestMethod.GET)
+    public @ResponseBody JSONObject showcolumn(@PathVariable String tablename,@PathVariable String columnname) throws IOException, ParseException {
+
+        File dir = new File("tables");
+        HashMap<String,HashMap<String,Object>> result;
+        Object column;
+        JSONObject col;
+        //String prettyFormatted;
+        File[] matches = dir.listFiles(new FilenameFilter()
+        {
+            public boolean accept(File dir, String name)
+            {
+                return name.equals(tablename+".json");
+            }
+        });
+
+        if(matches.length==0){
+            throw new MyResourceNotFoundException("Trying to fetch a non-exixsting table");
+        }else{
+            result = new ObjectMapper().readValue(matches[0], HashMap.class);
+        }
+
+        try{
+            column = result.get("columns").get(columnname).toString();
+        }catch(NullPointerException e){
+            throw new MyResourceNotFoundException("Trying to fetch a non-exixsting column");
+        }
+        JSONParser parser = new JSONParser();
+            col = (JSONObject) parser.parse(column.toString());
+        return col;
+    }
+
+
+    //Error handling functions
+    @ResponseStatus(value = HttpStatus.NOT_FOUND)
+    public class MyResourceNotFoundException extends RuntimeException {
+        public MyResourceNotFoundException() {
+            super();
+        }
+        public MyResourceNotFoundException(String message, Throwable cause) {
+            super(message, cause);
+        }
+        public MyResourceNotFoundException(String message) {
+            super(message);
+        }
+        public MyResourceNotFoundException(Throwable cause) {
+            super(cause);
+        }
+    }
 
 }
 
