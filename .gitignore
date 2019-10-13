@@ -1,6 +1,6 @@
 # /**/*.iml
-LaprasDB/target
-LaprasDB/.idea
+LaprasDB/target/
+LaprasDB/.idea/
 
 # Created by http://www.gitignore.io
 
