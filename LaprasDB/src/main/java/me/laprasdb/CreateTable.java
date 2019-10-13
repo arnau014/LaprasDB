@@ -2,6 +2,7 @@ package me.laprasdb;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -9,42 +10,49 @@ import java.util.Map;
  */
 public class CreateTable {
 
-    private Map<String, Map<String, Object>> table;
+    private Map<String, Object> table;
 
     public CreateTable(String tablename, ArrayList<String> columns) {
+        this.table = new HashMap<String, Object>();
+
+        try {
+            newTable(tablename, columns,  table);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 
     // Placeholder method to create the file
-    public void newTable(String[] name, Map<String, Map<String, Object>> table) throws IOException {
-        /*File f = new File(name[0]);
+    public void newTable(String name, ArrayList<String> columns, Map<String, Object> table) throws IOException {
+        File f = new File(name);
 
-        //if file does not exist, we create it
+        //if file does not exist, we create it a big file for the table which will contain all column names inside, later we create files for each column.
         if(!f.isFile()){
             try (Writer writer = new BufferedWriter(new OutputStreamWriter(
-                    new FileOutputStream(name[0]), "utf-8"))) {
+                    new FileOutputStream(name), "utf-8"))) {
+
+                FileOutputStream fos =new FileOutputStream(f,true);
+                Writer columnWriter = new BufferedWriter(new OutputStreamWriter(fos));
+
+                for (int i = 0; i < columns.size(); ++i ) {
+                    try (Writer colWriter = new BufferedWriter(new OutputStreamWriter(
+                            new FileOutputStream(columns.get(i)), "utf-8"))) {
+                        columnWriter.write(String.valueOf(i));
+                        columnWriter.write(',');
+                        columnWriter.write(columns.get(i));
+                        columnWriter.write("\n");
+                    }
+                }
+            }catch (IOException e) {
+                e.printStackTrace();
             }
+        }else{
+            //trigger error
         }
-
-        BufferedReader reader = new BufferedReader(new FileReader(name[0]));
-        int lines = 0;
-        while (reader.readLine() != null) lines++;
-        reader.close();
-
-        FileOutputStream fos =new FileOutputStream(f,true);
-        Writer csvWriter = new BufferedWriter(new OutputStreamWriter(fos));
-
-        for (int i = 1; i < name.length; ++i ) {
-            csvWriter.write(String.valueOf(lines++));
-            csvWriter.write(',');
-            csvWriter.write(name[i]);
-            csvWriter.write("\n");
-        }
-        csvWriter.close();
-    */
     }
 
-    public Map<String, Map<String, Object>> getTable() {
+    public Map<String, Object> getTable() {
         return table;
     }
 }
