@@ -8,11 +8,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CreateTable {
+public class Table {
 
-    private Map<String, Object> table;
-
-    public CreateTable(String tableName, ArrayList<String> columnNames) throws IOException {
+    public Table(String tableName, ArrayList<String> columnNames) throws IOException {
         //create ObjectMapper instance
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -39,9 +37,5 @@ public class CreateTable {
 
         //write Map object to json file
         objectMapper.writeValue(new File("tables/" + tableName + ".json"), table);
-    }
-
-    public Map<String, Object> getTable() {
-        return table;
     }
 }
