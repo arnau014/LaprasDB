@@ -1,24 +1,22 @@
 package me.laprasdb;
 
-import java.util.Map;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 
-import org.springframework.boot.json.JsonParser;
-import org.springframework.boot.json.JsonParserFactory;
-import org.springframework.web.bind.annotation.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Map;
 
 @RestController
 public class Controller {
 
-    /**
-     * Creates a new table
-     * @return
-     */
     @RequestMapping(value = "/create", method = RequestMethod.POST)
-    public CreateTable create(@RequestBody String table ) {
-        JsonParser jsonParser = JsonParserFactory.getJsonParser();
-        Map<String, Object> map = jsonParser.parseMap(table);
-        System.out.println(map);
-        return new CreateTable(table);
+    public CreateTable create(@RequestBody Map<String, Object> table ) throws IOException {
+        String tablename = table.get("tablename").toString();
+        ArrayList<String> columns = (ArrayList<String>) table.get("columns");
+        return new CreateTable(tablename, columns);
     }
 
 

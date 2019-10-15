@@ -1,51 +1,47 @@
 package me.laprasdb;
 
-import java.io.*;
-import java.util.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
-/**
- * Creates a new table
- */
+import java.io.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
 public class CreateTable {
 
-    // The table is a map with the column names as keys and the values are ArrayLists of the content
-    private Map<String, Map<String, Object>> table;
+    private Map<String, Object> table;
 
-    public CreateTable(String table) {
+    public CreateTable(String tableName, ArrayList<String> columnNames) throws IOException {
+        //create ObjectMapper instance
+        ObjectMapper objectMapper = new ObjectMapper();
 
+        // Create the table Map
+        Map<String, Object> table = new HashMap<>();
 
-    }
+        // Put the tableName into the table
+        table.put("tableName", tableName);
 
-    // Placeholder method to create the file
-    public void newTable(Map<String, Map<String, Object>> table) throws IOException {
-        /*File f = new File(name[0]);
+        // Create a new columns Map and fill it with the columnName(key) and an empty Map(value)
+        Map<String, Map<Integer, Object>> columns = new HashMap<>();
+        Map<Integer, Object> colInfo = new HashMap<>();
 
-        //if file does not exist, we create it
-        if(!f.isFile()){
-            try (Writer writer = new BufferedWriter(new OutputStreamWriter(
-                    new FileOutputStream(name[0]), "utf-8"))) {
-            }
+        for (String colName : columnNames) {
+            columns.put(colName, colInfo);
         }
 
-        BufferedReader reader = new BufferedReader(new FileReader(name[0]));
-        int lines = 0;
-        while (reader.readLine() != null) lines++;
-        reader.close();
+        // Put the remaining fields to the table
+        table.put("columns", columns);
+        table.put("lastId", 0);
 
-        FileOutputStream fos =new FileOutputStream(f,true);
-        Writer csvWriter = new BufferedWriter(new OutputStreamWriter(fos));
+        //configure objectMapper for pretty input
+        objectMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
 
-        for (int i = 1; i < name.length; ++i ) {
-            csvWriter.write(String.valueOf(lines++));
-            csvWriter.write(',');
-            csvWriter.write(name[i]);
-            csvWriter.write("\n");
-        }
-        csvWriter.close();
-*/
+        //write Map object to json file
+        objectMapper.writeValue(new File("tables/" + tableName + ".json"), table);
     }
 
-    public Map<String, Map<String, Object>> getTable() {
+    public Map<String, Object> getTable() {
         return table;
     }
 }
