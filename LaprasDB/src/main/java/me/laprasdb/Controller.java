@@ -2,6 +2,7 @@ package me.laprasdb;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.gson.Gson;
 import org.json.JSONArray;
 import org.json.simple.parser.JSONParser;
@@ -30,7 +31,7 @@ public class Controller {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @RequestMapping(path = "table/{tablename}", method = RequestMethod.GET)
-    public @ResponseBody JSONObject showtable(@PathVariable String tablename) throws IOException {
+    public @ResponseBody String showtable(@PathVariable String tablename) throws IOException {
 
         File dir = new File("tables");
         JSONObject result;
@@ -49,12 +50,13 @@ public class Controller {
             result = new ObjectMapper().readValue(matches[0], JSONObject.class);
 
         }
-        return result;
+
+        return result.toJSONString();
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @RequestMapping(path = "table/{tablename}/{columnname}", method = RequestMethod.GET)
-    public @ResponseBody JSONObject showcolumn(@PathVariable String tablename,@PathVariable String columnname) throws IOException, ParseException {
+    public @ResponseBody String showcolumn(@PathVariable String tablename,@PathVariable String columnname) throws IOException, ParseException {
 
         File dir = new File("tables");
         HashMap<String,HashMap<String,Object>> result;
@@ -76,13 +78,13 @@ public class Controller {
         }
 
         try{
-            column = result.get("columns").get(columnname).toString();
+            column = result.get("columns").get(columnname);
         }catch(NullPointerException e){
             throw new MyResourceNotFoundException("Trying to fetch a non-exixsting column");
         }
-        JSONParser parser = new JSONParser();
-            col = (JSONObject) parser.parse(column.toString());
-        return col;
+        ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+        String res = ow.writeValueAsString(column);
+        return res;
     }
 
 
