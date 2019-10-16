@@ -20,22 +20,24 @@ public class Table {
         // Put the tableName into the table
         table.put("tableName", tableName);
 
-        // Create a new columns Map and fill it with the columnName(key) and an empty Map(value)
-        Map<String, Map<Integer, Object>> columns = new HashMap<>();
-        Map<Integer, Object> colInfo = new HashMap<>();
+        // Put the column names into the table
+        table.put("columns", columnNames);
 
+        // For each column, create a file which will have its data.
+        // Each column is empty in the initial state
+        new File("tables/" + tableName).mkdirs();
         for (String colName : columnNames) {
-            columns.put(colName, colInfo);
+            objectMapper.writeValue(new File("tables/" + tableName + "/" + tableName + "_" + colName + ".json"),
+                    new HashMap<>());
         }
 
-        // Put the remaining fields to the table
-        table.put("columns", columns);
+        // Put the lastId to the table, which will be 0 for the first Id
         table.put("lastId", 0);
 
         //configure objectMapper for pretty input
         objectMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
 
         //write Map object to json file
-        objectMapper.writeValue(new File("tables/" + tableName + ".json"), table);
+        objectMapper.writeValue(new File("tables/" + tableName + "/" + tableName + ".json"), table);
     }
 }
