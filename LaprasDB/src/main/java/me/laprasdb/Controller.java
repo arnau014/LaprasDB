@@ -8,15 +8,14 @@ import org.json.JSONArray;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
+
 import org.json.simple.JSONObject;
 
 @RestController
@@ -85,6 +84,50 @@ public class Controller {
         ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
         String res = ow.writeValueAsString(column);
         return res;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @RequestMapping(method = RequestMethod.GET, value={"search/{tablename}/{id}/{match}","search/{tablename}/{id}"})
+    public @ResponseBody ResponseEntity<String> search(@PathVariable String tablename, @PathVariable int id, @PathVariable Optional<String> match) throws IOException {
+
+        File dir = new File("tables");
+        HashMap<String,HashMap<String,Object>> result;
+        String response = "";
+        File[] matches = dir.listFiles(new FilenameFilter()
+        {
+            public boolean accept(File dir, String name)
+            {
+                return name.equals(tablename+".json");
+            }
+        });
+
+        if(matches.length==0){
+            throw new MyResourceNotFoundException("Trying to fetch a non-exixsting table");
+        }else{
+            result = new ObjectMapper().readValue(matches[0], HashMap.class);
+        }
+
+        Iterator hmIterator = result.get("columns").entrySet().iterator();
+
+        while (hmIterator.hasNext()) {
+            Map.Entry mapElement = (Map.Entry)hmIterator.next();
+            HashMap<String,String> map = (HashMap<String, String>) mapElement.getValue();
+
+            for(String k : map.keySet()) {
+                if(Integer.parseInt(k) == id) {
+                    if(match.isPresent()) {
+                        if(map.get(k).equals(match.get())) {
+                            response += map.get(k)+"\n";
+                        }
+                    } else {
+                        response += map.get(k)+"\n";
+                    }
+
+                }
+            }
+        }
+
+        return new ResponseEntity<>(response,HttpStatus.OK);
     }
 
 
