@@ -88,7 +88,7 @@ public class Controller {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @RequestMapping(method = RequestMethod.GET, value={"search/{tablename}/{id}/{match}","search/{tablename}/{id}"})
-    public @ResponseBody ResponseEntity<String> search(@PathVariable String tablename, @PathVariable int id, @PathVariable Optional<String> match) throws IOException {
+    public @ResponseBody ResponseEntity<String> search(Search search) throws IOException {
 
         File dir = new File("tables");
         HashMap<String,HashMap<String,Object>> result;
@@ -97,7 +97,7 @@ public class Controller {
         {
             public boolean accept(File dir, String name)
             {
-                return name.equals(tablename+".json");
+                return name.equals(search.getTablename()+".json");
             }
         });
 
@@ -114,9 +114,9 @@ public class Controller {
             HashMap<String,String> map = (HashMap<String, String>) mapElement.getValue();
 
             for(String k : map.keySet()) {
-                if(Integer.parseInt(k) == id) {
-                    if(match.isPresent()) {
-                        if(map.get(k).equals(match.get())) {
+                if(Integer.parseInt(k) == search.getId()) {
+                    if(search.getMatch() != null) {
+                        if(map.get(k).equals(search.getMatch())) {
                             response += map.get(k)+"\n";
                         }
                     } else {
