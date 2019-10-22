@@ -1,6 +1,5 @@
 package me.laprasdb;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
@@ -9,10 +8,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CreateTable {
+public class Table {
 
-    private Map<String, Object> table;
-    public CreateTable(String tableName, ArrayList<String> columnNames) throws IOException {
+    public Table(String tableName, ArrayList<String> columnNames) throws IOException {
         //create ObjectMapper instance
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -20,7 +18,6 @@ public class CreateTable {
         Map<String, Object> table = new HashMap<>();
 
         // Put the tableName into the table
-
         table.put("tableName", tableName);
 
         // Create a new columns Map and fill it with the columnName(key) and an empty Map(value)
@@ -40,9 +37,5 @@ public class CreateTable {
 
         //write Map object to json file
         objectMapper.writeValue(new File("tables/" + tableName + ".json"), table);
-    }
-
-    public Map<String, Object> getTable() {
-        return table;
     }
 }
