@@ -1,0 +1,8 @@
+{
+  "columns" : {
+    "colb" : {"1": "abs","2":"asd"},
+    "col1" : {"1": "xavi","2":"cristian"}
+  },
+  "lastId" : 0,
+  "tableName" : "test2"
+}
