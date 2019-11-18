@@ -4,14 +4,14 @@ import javax.validation.constraints.NotBlank;
 
 public class Search {
     private String tablename;
-    private int id;
+    private String id;
     private String match;
 
     public String getTablename() {
         return tablename;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
@@ -23,7 +23,7 @@ public class Search {
         this.tablename = tablename;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 

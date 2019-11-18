@@ -38,11 +38,11 @@ public class Controller {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @RequestMapping(path = "table/{tablename}", method = RequestMethod.GET)
-    public @ResponseBody String showtable(@PathVariable String tablename) throws IOException {
+    public @ResponseBody ResponseEntity<String> showtable(@PathVariable String tablename) throws IOException {
 
-        File dir = new File("tables");
+        File dir = new File("tables/"+tablename);
         JSONObject result;
-        //String prettyFormatted;
+        String result2 = "";
         File[] matches = dir.listFiles(new FilenameFilter()
         {
             public boolean accept(File dir, String name)
@@ -58,43 +58,62 @@ public class Controller {
 
         }
 
-        return result.toJSONString();
+        ArrayList<String> columnas = (ArrayList<String>) result.get("columns");
+        for(String c : columnas) {
+            matches = dir.listFiles(new FilenameFilter()
+            {
+                public boolean accept(File dir, String name)
+                {
+                    return name.equals(tablename+"_"+c+".json");
+                }
+            });
+            if(matches.length==0){
+                throw new MyResourceNotFoundException("Trying to fetch a non-exixsting column");
+            }else{
+                result2 += new ObjectMapper().readValue(matches[0], JSONObject.class)+"\n";
+
+            }
+        }
+
+        return new ResponseEntity<String>(result2,HttpStatus.OK);
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    @RequestMapping(path = "table/{tablename}/{columnname}", method = RequestMethod.GET)
-    public @ResponseBody String showcolumn(@PathVariable String tablename,@PathVariable String columnname) throws IOException, ParseException {
+    @RequestMapping(method = RequestMethod.GET, value={"table/{tablename}/{id}","table/{tablename}/{id}/{match}"})
+    public @ResponseBody ResponseEntity<String> showcolumn(Search search) throws IOException, ParseException {
 
-        File dir = new File("tables");
-        HashMap<String,HashMap<String,Object>> result;
-        Object column;
-        JSONObject col;
-        //String prettyFormatted;
-        File[] matches = dir.listFiles(new FilenameFilter()
+        File dir = new File("tables/"+search.getTablename());
+        HashMap<String,Object> column;
+        String response = "";
+
+        File[] matches = dir.listFiles( new FilenameFilter()
         {
             public boolean accept(File dir, String name)
             {
-                return name.equals(tablename+".json");
+                return name.equals(search.getTablename()+"_"+search.getId()+".json");
             }
         });
-
         if(matches.length==0){
-            throw new MyResourceNotFoundException("Trying to fetch a non-exixsting table");
+            throw new MyResourceNotFoundException("Trying to fetch a non-exixsting column");
         }else{
-            result = new ObjectMapper().readValue(matches[0], HashMap.class);
+            column = new ObjectMapper().readValue(matches[0], HashMap.class);
+            if(search.getMatch() != null) {
+                Iterator hmIterator = column.entrySet().iterator();
+                while (hmIterator.hasNext()) {
+                    Map.Entry mapElement = (Map.Entry)hmIterator.next();
+                    if(mapElement.getValue().equals(search.getMatch())) {
+                        response += mapElement.getValue().toString()+"\n";
+                    }
+                }
+
+                return new ResponseEntity<String>(response,HttpStatus.OK);
+            }
         }
 
-        try{
-            column = result.get("columns").get(columnname);
-        }catch(NullPointerException e){
-            throw new MyResourceNotFoundException("Trying to fetch a non-exixsting column");
-        }
-        ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-        String res = ow.writeValueAsString(column);
-        return res;
+        return new ResponseEntity<String>(column.toString(),HttpStatus.OK);
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
+    /*@JsonIgnoreProperties(ignoreUnknown = true)
     @RequestMapping(method = RequestMethod.GET, value={"search/{tablename}/{id}/{match}","search/{tablename}/{id}"})
     public @ResponseBody ResponseEntity<String> search(Search search) throws IOException {
 
@@ -122,7 +141,7 @@ public class Controller {
             HashMap<String,String> map = (HashMap<String, String>) mapElement.getValue();
 
             for(String k : map.keySet()) {
-                if(Integer.parseInt(k) == search.getId()) {
+                if(k.equals(search.getId())) {
                     if(search.getMatch() != null) {
                         if(map.get(k).equals(search.getMatch())) {
                             response += map.get(k)+"\n";
@@ -136,7 +155,7 @@ public class Controller {
         }
 
         return new ResponseEntity<>(response,HttpStatus.OK);
-    }
+    }*/
 
 
     //Error handling functions
