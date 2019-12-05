@@ -36,6 +36,24 @@ public class Controller {
         return new ResponseEntity(HttpStatus.CREATED);
     }
 
+    @RequestMapping(path = "table/{tableName}", method = RequestMethod.DELETE)
+    public ResponseEntity deletetable(@PathVariable String tableName) throws IOException {
+
+        JSONObject result;
+        if (new File("tables/" + tableName).exists()) {
+            File tempFile = new File("tables/" + tableName);
+            boolean deleted  = deleteDirectory(tempFile);
+            if (deleted){
+                return new ResponseEntity(HttpStatus.OK);
+            }
+        }else {
+            return new ResponseEntity(HttpStatus.NOT_FOUND);
+        }
+
+
+        return new ResponseEntity(HttpStatus.NOT_FOUND);
+    }
+
     @RequestMapping(value = "/insert", method = RequestMethod.POST)
     public ResponseEntity insert(@RequestBody Map<String, Object> insert ) throws IOException {
         String tableName = insert.get("tableName").toString();
@@ -180,6 +198,16 @@ public class Controller {
         }
     }
 
+    //Function to delete a directory
+    boolean deleteDirectory(File directoryToBeDeleted) {
+        File[] allContents = directoryToBeDeleted.listFiles();
+        if (allContents != null) {
+            for (File file : allContents) {
+                deleteDirectory(file);
+            }
+        }
+        return directoryToBeDeleted.delete();
+    }
 }
 
 
