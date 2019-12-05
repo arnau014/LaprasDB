@@ -20,11 +20,11 @@ public class Controller {
 
     @RequestMapping(value = "/create", method = RequestMethod.POST)
     public ResponseEntity create(@RequestBody Map<String, Object> table ) throws IOException {
-        String tablename = table.get("tablename").toString();
+        String tableName = table.get("tableName").toString();
         ArrayList<String> columns = (ArrayList<String>) table.get("columns");
 
         // Check if file exists
-        File tempFile = new File("tables/" + tablename + ".json");
+        File tempFile = new File("tables/" + tableName + "/" + tableName + ".json");
 
         // If the file exists, return CONFLICT ERROR
         if(tempFile.exists()){
@@ -32,13 +32,37 @@ public class Controller {
         }
 
         // If doesn't exist, create the new table
-        new Table(tablename, columns);
+        new Table(tableName, columns);
         return new ResponseEntity(HttpStatus.CREATED);
     }
 
+    @RequestMapping(value = "/insert", method = RequestMethod.POST)
+    public ResponseEntity insert(@RequestBody Map<String, Object> insert ) throws IOException {
+        String tableName = insert.get("tableName").toString();
+        Map<String, Object> attrs = (Map<String, Object>) insert.get("attrs");
+
+        // Check if table exists
+        File tempFile = new File("tables/" + tableName + "/" + tableName + ".json");
+
+        // If the file does not exists, return NOT FOUND ERROR
+        if(!tempFile.exists()){
+            return new ResponseEntity(HttpStatus.NOT_FOUND);
+        }
+
+        // If exists, insert into the table
+        Table table = new Table(tableName);
+        Boolean inserted = table.insert(attrs);
+
+        // Check if insertion went well
+        if (inserted)
+            return new ResponseEntity(HttpStatus.CREATED);
+        else
+            return new ResponseEntity(HttpStatus.BAD_REQUEST);
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
-    @RequestMapping(path = "table/{tablename}", method = RequestMethod.GET)
-    public @ResponseBody String showtable(@PathVariable String tablename) throws IOException {
+    @RequestMapping(path = "table/{tableName}", method = RequestMethod.GET)
+    public @ResponseBody String showtable(@PathVariable String tableName) throws IOException {
 
         File dir = new File("tables");
         JSONObject result;
@@ -47,7 +71,7 @@ public class Controller {
         {
             public boolean accept(File dir, String name)
             {
-                return name.equals(tablename+".json");
+                return name.equals(tableName+".json");
             }
         });
 
@@ -62,8 +86,8 @@ public class Controller {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    @RequestMapping(path = "table/{tablename}/{columnname}", method = RequestMethod.GET)
-    public @ResponseBody String showcolumn(@PathVariable String tablename,@PathVariable String columnname) throws IOException, ParseException {
+    @RequestMapping(path = "table/{tableName}/{columnname}", method = RequestMethod.GET)
+    public @ResponseBody String showcolumn(@PathVariable String tableName,@PathVariable String columnname) throws IOException, ParseException {
 
         File dir = new File("tables");
         HashMap<String,HashMap<String,Object>> result;
@@ -74,7 +98,7 @@ public class Controller {
         {
             public boolean accept(File dir, String name)
             {
-                return name.equals(tablename+".json");
+                return name.equals(tableName+".json");
             }
         });
 
@@ -95,7 +119,7 @@ public class Controller {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    @RequestMapping(method = RequestMethod.GET, value={"search/{tablename}/{id}/{match}","search/{tablename}/{id}"})
+    @RequestMapping(method = RequestMethod.GET, value={"search/{tableName}/{id}/{match}","search/{tableName}/{id}"})
     public @ResponseBody ResponseEntity<String> search(Search search) throws IOException {
 
         File dir = new File("tables");
@@ -105,7 +129,7 @@ public class Controller {
         {
             public boolean accept(File dir, String name)
             {
-                return name.equals(search.getTablename()+".json");
+                return name.equals(search.getTableName()+".json");
             }
         });
 

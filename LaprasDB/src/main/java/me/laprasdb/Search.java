@@ -7,7 +7,7 @@ public class Search {
     private int id;
     private String match;
 
-    public String getTablename() {
+    public String getTableName() {
         return tablename;
     }
 
@@ -19,7 +19,7 @@ public class Search {
         return match;
     }
 
-    public void setTablename(String tablename) {
+    public void setTableName(String tablename) {
         this.tablename = tablename;
     }
 
