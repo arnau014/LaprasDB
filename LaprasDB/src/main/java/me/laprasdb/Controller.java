@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.*;
+import org.apache.commons.io.FileUtils;
 
 import org.json.simple.JSONObject;
 
@@ -33,7 +34,7 @@ public class Controller {
 
         // If doesn't exist, create the new table
         new Table(tableName, columns);
-        return new ResponseEntity(HttpStatus.CREATED);
+        return new ResponseEntity("Table deteled.",HttpStatus.CREATED);
     }
 
     @RequestMapping(path = "table/{tableName}", method = RequestMethod.DELETE)
@@ -111,23 +112,41 @@ public class Controller {
         HashMap<String,HashMap<String,Object>> result;
         Object column;
         JSONObject col;
-        //String prettyFormatted;
-        File[] matches = dir.listFiles(new FilenameFilter()
-        {
-            public boolean accept(File dir, String name)
-            {
-                return name.equals(tableName+"_"+columnname+".json");
-            }
-        });
+        String target_file ;
+        List<String> fList = new ArrayList<String>();
+        File[] folderToScan = dir.listFiles();
+        String res="[";
 
-        if(matches.length==0){
-            throw new MyResourceNotFoundException("Trying to fetch a non-exixsting column");
-        }else{
-            result = new ObjectMapper().readValue(matches[0], HashMap.class);
+        for (int i = 0; i < folderToScan.length; i++) {
+            if (folderToScan[i].isFile()) {
+                target_file = folderToScan[i].getName();
+                if (target_file.startsWith(tableName+"_"+columnname)
+                        && target_file.endsWith(".json")) {
+
+                    fList.add(target_file);
+                }
+            }
         }
 
-        ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-        String res = ow.writeValueAsString(result);
+
+        if(fList.size()==0){
+            throw new MyResourceNotFoundException("Trying to fetch a non-exixsting column");
+        }else{
+            for (int i = 0; i < fList.size(); i++){
+                String nm = fList.get(i);
+                File[] matches = dir.listFiles(new FilenameFilter()
+                {
+                    public boolean accept(File dir, String name)
+                    {
+                        return name.equals(nm);
+                    }
+                });
+                result = new ObjectMapper().readValue(matches[0], HashMap.class);
+                ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+                res += ow.writeValueAsString(result)+",";
+            }
+        }
+        res += "]";
         return res;
     }
 
