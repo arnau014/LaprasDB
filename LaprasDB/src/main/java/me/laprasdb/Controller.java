@@ -82,7 +82,7 @@ public class Controller {
     @RequestMapping(path = "table/{tableName}", method = RequestMethod.GET)
     public @ResponseBody String showtable(@PathVariable String tableName) throws IOException {
 
-        File dir = new File("tables");
+        File dir = new File("tables/"+tableName);
         JSONObject result;
         //String prettyFormatted;
         File[] matches = dir.listFiles(new FilenameFilter()
@@ -107,7 +107,7 @@ public class Controller {
     @RequestMapping(path = "table/{tableName}/{columnname}", method = RequestMethod.GET)
     public @ResponseBody String showcolumn(@PathVariable String tableName,@PathVariable String columnname) throws IOException, ParseException {
 
-        File dir = new File("tables");
+        File dir = new File("tables/"+tableName);
         HashMap<String,HashMap<String,Object>> result;
         Object column;
         JSONObject col;
@@ -116,23 +116,18 @@ public class Controller {
         {
             public boolean accept(File dir, String name)
             {
-                return name.equals(tableName+".json");
+                return name.equals(tableName+"_"+columnname+".json");
             }
         });
 
         if(matches.length==0){
-            throw new MyResourceNotFoundException("Trying to fetch a non-exixsting table");
+            throw new MyResourceNotFoundException("Trying to fetch a non-exixsting column");
         }else{
             result = new ObjectMapper().readValue(matches[0], HashMap.class);
         }
 
-        try{
-            column = result.get("columns").get(columnname);
-        }catch(NullPointerException e){
-            throw new MyResourceNotFoundException("Trying to fetch a non-exixsting column");
-        }
         ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-        String res = ow.writeValueAsString(column);
+        String res = ow.writeValueAsString(result);
         return res;
     }
 
@@ -140,7 +135,7 @@ public class Controller {
     @RequestMapping(method = RequestMethod.GET, value={"search/{tableName}/{id}/{match}","search/{tableName}/{id}"})
     public @ResponseBody ResponseEntity<String> search(Search search) throws IOException {
 
-        File dir = new File("tables");
+        File dir = new File("tables/"+search.getTableName());
         HashMap<String,HashMap<String,Object>> result;
         String response = "";
         File[] matches = dir.listFiles(new FilenameFilter()
