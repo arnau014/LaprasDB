@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.*;
+import org.apache.commons.io.FileUtils;
 
 import org.json.simple.JSONObject;
 
@@ -33,7 +34,25 @@ public class Controller {
 
         // If doesn't exist, create the new table
         new Table(tableName, columns);
-        return new ResponseEntity(HttpStatus.CREATED);
+        return new ResponseEntity("Table deteled.",HttpStatus.CREATED);
+    }
+
+    @RequestMapping(path = "table/{tableName}", method = RequestMethod.DELETE)
+    public ResponseEntity deletetable(@PathVariable String tableName) throws IOException {
+
+        JSONObject result;
+        if (new File("tables/" + tableName).exists()) {
+            File tempFile = new File("tables/" + tableName);
+            boolean deleted  = deleteDirectory(tempFile);
+            if (deleted){
+                return new ResponseEntity(HttpStatus.OK);
+            }
+        }else {
+            return new ResponseEntity(HttpStatus.NOT_FOUND);
+        }
+
+
+        return new ResponseEntity(HttpStatus.NOT_FOUND);
     }
 
     @RequestMapping(value = "/insert", method = RequestMethod.POST)
@@ -64,7 +83,7 @@ public class Controller {
     @RequestMapping(path = "table/{tableName}", method = RequestMethod.GET)
     public @ResponseBody String showtable(@PathVariable String tableName) throws IOException {
 
-        File dir = new File("tables");
+        File dir = new File("tables/"+tableName);
         JSONObject result;
         //String prettyFormatted;
         File[] matches = dir.listFiles(new FilenameFilter()
@@ -89,32 +108,45 @@ public class Controller {
     @RequestMapping(path = "table/{tableName}/{columnname}", method = RequestMethod.GET)
     public @ResponseBody String showcolumn(@PathVariable String tableName,@PathVariable String columnname) throws IOException, ParseException {
 
-        File dir = new File("tables");
+        File dir = new File("tables/"+tableName);
         HashMap<String,HashMap<String,Object>> result;
         Object column;
         JSONObject col;
-        //String prettyFormatted;
-        File[] matches = dir.listFiles(new FilenameFilter()
-        {
-            public boolean accept(File dir, String name)
-            {
-                return name.equals(tableName+".json");
+        String target_file ;
+        List<String> fList = new ArrayList<String>();
+        File[] folderToScan = dir.listFiles();
+        String res="[";
+
+        for (int i = 0; i < folderToScan.length; i++) {
+            if (folderToScan[i].isFile()) {
+                target_file = folderToScan[i].getName();
+                if (target_file.startsWith(tableName+"_"+columnname)
+                        && target_file.endsWith(".json")) {
+
+                    fList.add(target_file);
+                }
             }
-        });
-
-        if(matches.length==0){
-            throw new MyResourceNotFoundException("Trying to fetch a non-exixsting table");
-        }else{
-            result = new ObjectMapper().readValue(matches[0], HashMap.class);
         }
 
-        try{
-            column = result.get("columns").get(columnname);
-        }catch(NullPointerException e){
+
+        if(fList.size()==0){
             throw new MyResourceNotFoundException("Trying to fetch a non-exixsting column");
+        }else{
+            for (int i = 0; i < fList.size(); i++){
+                String nm = fList.get(i);
+                File[] matches = dir.listFiles(new FilenameFilter()
+                {
+                    public boolean accept(File dir, String name)
+                    {
+                        return name.equals(nm);
+                    }
+                });
+                result = new ObjectMapper().readValue(matches[0], HashMap.class);
+                ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+                res += ow.writeValueAsString(result)+",";
+            }
         }
-        ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-        String res = ow.writeValueAsString(column);
+        res += "]";
         return res;
     }
 
@@ -122,7 +154,7 @@ public class Controller {
     @RequestMapping(method = RequestMethod.GET, value={"search/{tableName}/{id}/{match}","search/{tableName}/{id}"})
     public @ResponseBody ResponseEntity<String> search(Search search) throws IOException {
 
-        File dir = new File("tables");
+        File dir = new File("tables/"+search.getTableName());
         HashMap<String,HashMap<String,Object>> result;
         String response = "";
         File[] matches = dir.listFiles(new FilenameFilter()
@@ -180,6 +212,16 @@ public class Controller {
         }
     }
 
+    //Function to delete a directory
+    boolean deleteDirectory(File directoryToBeDeleted) {
+        File[] allContents = directoryToBeDeleted.listFiles();
+        if (allContents != null) {
+            for (File file : allContents) {
+                deleteDirectory(file);
+            }
+        }
+        return directoryToBeDeleted.delete();
+    }
 }
 
 
