@@ -37,8 +37,8 @@ public class Controller {
         return new ResponseEntity("Table deteled.",HttpStatus.CREATED);
     }
 
-    @RequestMapping(path = "table/{tableName}", method = RequestMethod.DELETE)
-    public ResponseEntity deletetable(@PathVariable String tableName) throws IOException {
+    @RequestMapping(path = "drop/{tableName}", method = RequestMethod.DELETE)
+    public ResponseEntity deleteTable(@PathVariable String tableName) throws IOException {
 
         JSONObject result;
         if (new File("tables/" + tableName).exists()) {
@@ -80,8 +80,8 @@ public class Controller {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    @RequestMapping(path = "table/{tableName}", method = RequestMethod.GET)
-    public @ResponseBody String showtable(@PathVariable String tableName) throws IOException {
+    @RequestMapping(path = "show/{tableName}", method = RequestMethod.GET)
+    public @ResponseBody String showTable(@PathVariable String tableName) throws IOException {
 
         File dir = new File("tables/"+tableName);
         JSONObject result;
@@ -95,7 +95,7 @@ public class Controller {
         });
 
         if(matches.length==0){
-            throw new MyResourceNotFoundException("Trying to fetch a non-exixsting table");
+            throw new MyResourceNotFoundException("Trying to fetch a non-existing table");
         }else{
             result = new ObjectMapper().readValue(matches[0], JSONObject.class);
 
@@ -105,8 +105,8 @@ public class Controller {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    @RequestMapping(path = "table/{tableName}/{columnname}", method = RequestMethod.GET)
-    public @ResponseBody String showcolumn(@PathVariable String tableName,@PathVariable String columnname) throws IOException, ParseException {
+    @RequestMapping(path = "show/{tableName}/{columnName}", method = RequestMethod.GET)
+    public @ResponseBody String showColumn(@PathVariable String tableName,@PathVariable String columnName) throws IOException, ParseException {
 
         File dir = new File("tables/"+tableName);
         HashMap<String,HashMap<String,Object>> result;
@@ -120,7 +120,7 @@ public class Controller {
         for (int i = 0; i < folderToScan.length; i++) {
             if (folderToScan[i].isFile()) {
                 target_file = folderToScan[i].getName();
-                if (target_file.startsWith(tableName+"_"+columnname)
+                if (target_file.startsWith(tableName+"_"+columnName)
                         && target_file.endsWith(".json")) {
 
                     fList.add(target_file);
@@ -143,7 +143,8 @@ public class Controller {
                 });
                 result = new ObjectMapper().readValue(matches[0], HashMap.class);
                 ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-                res += ow.writeValueAsString(result)+",";
+                res += ow.writeValueAsString(result);
+                if (i != (fList.size() - 1)) res += ",";
             }
         }
         res += "]";
