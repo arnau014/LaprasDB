@@ -1,20 +1,22 @@
 package me.laprasdb;
 
+import com.google.gson.Gson;
+import org.json.JSONArray;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import org.json.simple.parser.ParseException;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.*;
-import org.apache.commons.io.FileUtils;
 
-import org.json.simple.JSONObject;
+import org.json.JSONObject;
+
 
 @RestController
 public class Controller {
@@ -55,6 +57,96 @@ public class Controller {
         return new ResponseEntity(HttpStatus.NOT_FOUND);
     }
 
+    @RequestMapping(value = "/select", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    public Object select(@RequestBody Map<String, Object> select ) throws IOException, ParseException {
+        String operation = select.get("operation").toString();
+        String tableName = select.get("tableName").toString();
+        String columnName = select.get("column").toString();
+
+        // Check if table exists
+        File tempFile = new File("tables/" + tableName + "/" + tableName + ".json");
+
+        // If the file does not exists, return NOT FOUND ERROR
+        if(!tempFile.exists()){
+            System.out.println("not-EXISTS");
+            return new ResponseEntity(HttpStatus.NOT_FOUND);
+        }
+
+        Table table = new Table(tableName);
+
+        JSONArray jsonRules = new JSONArray(table.showColumn(tableName,columnName ).replace("\n","").replace(" ","").replace("\\",""));
+
+        if(operation.equals("sum")){
+            int sum = 0;
+            for (int i = 0; i < jsonRules.length(); i++) {
+                System.out.println();
+
+                JSONObject jsonObject = jsonRules.getJSONObject(i);
+                Iterator<String> keys = jsonObject.keys();
+
+                while(keys.hasNext()) {
+                    String key = keys.next();
+                    sum += Integer.parseInt(jsonObject.getString(key));
+                }
+            }
+            return JSONObject.quote(new Gson().toJson("total:"+sum));
+        }else if(operation.equals("avg")){
+            int sum = 0;
+            int j = 0;
+            for (int i = 0; i < jsonRules.length(); i++) {
+                JSONObject jsonObject = jsonRules.getJSONObject(i);
+                Iterator<String> keys = jsonObject.keys();
+
+                while(keys.hasNext()) {
+                    String key = keys.next();
+                    sum += Integer.parseInt(jsonObject.getString(key));
+                    ++j;
+                }
+            }
+            return JSONObject.quote(new Gson().toJson("avg:"+(sum/j)));
+        }else if(operation.equals("min")){
+            int min = 0;
+            for (int i = 0; i < jsonRules.length(); i++) {
+                JSONObject jsonObject = jsonRules.getJSONObject(i);
+                Iterator<String> keys = jsonObject.keys();
+
+                min = Integer.parseInt(jsonObject.getString(keys.next()));
+
+                while(keys.hasNext()) {
+                    String key = keys.next();
+                    if(Integer.parseInt(jsonObject.getString(key)) < min) min = Integer.parseInt(jsonObject.getString(key));
+                }
+            }
+            return JSONObject.quote(new Gson().toJson("min:"+min));
+        }else if(operation.equals("max")){
+            int max = 0;
+            for (int i = 0; i < jsonRules.length(); i++) {
+                JSONObject jsonObject = jsonRules.getJSONObject(i);
+                Iterator<String> keys = jsonObject.keys();
+
+                max = Integer.parseInt(jsonObject.getString(keys.next()));
+
+                while(keys.hasNext()) {
+                    String key = keys.next();
+                    if(Integer.parseInt(jsonObject.getString(key)) > max) max = Integer.parseInt(jsonObject.getString(key));
+                }
+            }
+            return JSONObject.quote(new Gson().toJson("max:"+max));
+        }else if(operation.equals("count")){
+            int i = 0;
+            for (int i = 0; i < jsonRules.length(); i++) {
+                JSONObject jsonObject = jsonRules.getJSONObject(i);
+                Iterator<String> keys = jsonObject.keys();
+
+                while(keys.hasNext()) {
+                    keys.next();
+                    ++i;
+                }
+            }
+            return JSONObject.quote("rows:"+i);
+        }
+    }
+
     @RequestMapping(value = "/insert", method = RequestMethod.POST)
     public ResponseEntity insert(@RequestBody Map<String, Object> insert ) throws IOException {
         String tableName = insert.get("tableName").toString();
@@ -65,6 +157,7 @@ public class Controller {
 
         // If the file does not exists, return NOT FOUND ERROR
         if(!tempFile.exists()){
+            System.out.println("not-EXISTS");
             return new ResponseEntity(HttpStatus.NOT_FOUND);
         }
 
@@ -101,53 +194,16 @@ public class Controller {
 
         }
 
-        return result.toJSONString();
+        return result.toString();
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @RequestMapping(path = "table/{tableName}/{columnname}", method = RequestMethod.GET)
     public @ResponseBody String showcolumn(@PathVariable String tableName,@PathVariable String columnname) throws IOException, ParseException {
 
-        File dir = new File("tables/"+tableName);
-        HashMap<String,HashMap<String,Object>> result;
-        Object column;
-        JSONObject col;
-        String target_file ;
-        List<String> fList = new ArrayList<String>();
-        File[] folderToScan = dir.listFiles();
-        String res="[";
+        Table table = new Table(tableName);
+        return table.showColumn(tableName, columnname);
 
-        for (int i = 0; i < folderToScan.length; i++) {
-            if (folderToScan[i].isFile()) {
-                target_file = folderToScan[i].getName();
-                if (target_file.startsWith(tableName+"_"+columnname)
-                        && target_file.endsWith(".json")) {
-
-                    fList.add(target_file);
-                }
-            }
-        }
-
-
-        if(fList.size()==0){
-            throw new MyResourceNotFoundException("Trying to fetch a non-exixsting column");
-        }else{
-            for (int i = 0; i < fList.size(); i++){
-                String nm = fList.get(i);
-                File[] matches = dir.listFiles(new FilenameFilter()
-                {
-                    public boolean accept(File dir, String name)
-                    {
-                        return name.equals(nm);
-                    }
-                });
-                result = new ObjectMapper().readValue(matches[0], HashMap.class);
-                ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-                res += ow.writeValueAsString(result)+",";
-            }
-        }
-        res += "]";
-        return res;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
