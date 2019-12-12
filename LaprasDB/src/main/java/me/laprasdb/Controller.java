@@ -1,6 +1,7 @@
 package me.laprasdb;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import org.json.JSONArray;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -26,6 +27,10 @@ public class Controller {
         String tableName = table.get("tableName").toString();
         ArrayList<String> columns = (ArrayList<String>) table.get("columns");
 
+        //Check if user has put some columns in the table
+        if (columns.size() == 0 || tableName == "") {
+            return new ResponseEntity(HttpStatus.BAD_REQUEST);
+        }
         // Check if file exists
         File tempFile = new File("tables/" + tableName + "/" + tableName + ".json");
 
@@ -36,11 +41,11 @@ public class Controller {
 
         // If doesn't exist, create the new table
         new Table(tableName, columns);
-        return new ResponseEntity("Table deteled.",HttpStatus.CREATED);
+        return new ResponseEntity(HttpStatus.CREATED);
     }
 
-    @RequestMapping(path = "table/{tableName}", method = RequestMethod.DELETE)
-    public ResponseEntity deletetable(@PathVariable String tableName) throws IOException {
+    @RequestMapping(path = "drop/{tableName}", method = RequestMethod.DELETE)
+    public ResponseEntity deleteTable(@PathVariable String tableName) throws IOException {
 
         JSONObject result;
         if (new File("tables/" + tableName).exists()) {
@@ -63,6 +68,10 @@ public class Controller {
         String tableName = select.get("tableName").toString();
         String columnName = select.get("column").toString();
 
+        if (columnName.isEmpty()) {
+            return new ResponseEntity(HttpStatus.BAD_REQUEST);
+        }
+
         // Check if table exists
         File tempFile = new File("tables/" + tableName + "/" + tableName + ".json");
 
@@ -74,12 +83,18 @@ public class Controller {
 
         Table table = new Table(tableName);
 
-        JSONArray jsonRules = new JSONArray(table.showColumn(tableName,columnName ).replace("\n","").replace(" ","").replace("\\",""));
+        JSONArray jsonRules = new JSONArray(table.showColumn(tableName,columnName).replace("\n","").replace(" ","").replace("\\",""));
+
+        if (jsonRules.getJSONObject(0).isEmpty()){
+            if (operation.equals("count")){
+                return JSONObject.quote("rows: 0");
+            }
+            return new ResponseEntity("This column is empty.", HttpStatus.NO_CONTENT);
+        }
 
         if(operation.equals("sum")){
             int sum = 0;
             for (int i = 0; i < jsonRules.length(); i++) {
-                System.out.println();
 
                 JSONObject jsonObject = jsonRules.getJSONObject(i);
                 Iterator<String> keys = jsonObject.keys();
@@ -103,7 +118,7 @@ public class Controller {
                     ++j;
                 }
             }
-            return JSONObject.quote(new Gson().toJson("avg:"+(sum/j)));
+            return JSONObject.quote(new Gson().toJson("avg:"+(sum)));
         }else if(operation.equals("min")){
             int min = 0;
             for (int i = 0; i < jsonRules.length(); i++) {
@@ -117,6 +132,7 @@ public class Controller {
                     if(Integer.parseInt(jsonObject.getString(key)) < min) min = Integer.parseInt(jsonObject.getString(key));
                 }
             }
+
             return JSONObject.quote(new Gson().toJson("min:"+min));
         }else if(operation.equals("max")){
             int max = 0;
@@ -133,18 +149,20 @@ public class Controller {
             }
             return JSONObject.quote(new Gson().toJson("max:"+max));
         }else if(operation.equals("count")){
-            int i = 0;
+            int z = 0;
             for (int i = 0; i < jsonRules.length(); i++) {
                 JSONObject jsonObject = jsonRules.getJSONObject(i);
                 Iterator<String> keys = jsonObject.keys();
 
                 while(keys.hasNext()) {
                     keys.next();
-                    ++i;
+                    ++z;
                 }
             }
-            return JSONObject.quote("rows:"+i);
+            return JSONObject.quote("rows:"+z);
         }
+
+        return new ResponseEntity(HttpStatus.BAD_REQUEST);
     }
 
     @RequestMapping(value = "/insert", method = RequestMethod.POST)
@@ -173,37 +191,19 @@ public class Controller {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    @RequestMapping(path = "table/{tableName}", method = RequestMethod.GET)
-    public @ResponseBody String showtable(@PathVariable String tableName) throws IOException {
+    @RequestMapping(path = "show/{tableName}", method = RequestMethod.GET)
+    public @ResponseBody String showTable(@PathVariable String tableName) throws IOException {
 
-        File dir = new File("tables/"+tableName);
-        JSONObject result;
-        //String prettyFormatted;
-        File[] matches = dir.listFiles(new FilenameFilter()
-        {
-            public boolean accept(File dir, String name)
-            {
-                return name.equals(tableName+".json");
-            }
-        });
+        Table table = new Table(tableName);
+        return table.showTable(tableName);
 
-        if(matches.length==0){
-            throw new MyResourceNotFoundException("Trying to fetch a non-exixsting table");
-        }else{
-            result = new ObjectMapper().readValue(matches[0], JSONObject.class);
-
-        }
-
-        return result.toString();
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    @RequestMapping(path = "table/{tableName}/{columnname}", method = RequestMethod.GET)
-    public @ResponseBody String showcolumn(@PathVariable String tableName,@PathVariable String columnname) throws IOException, ParseException {
-
+    @RequestMapping(path = "show/{tableName}/{columnName}", method = RequestMethod.GET)
+    public @ResponseBody String showColumn(@PathVariable String tableName,@PathVariable String columnName) throws IOException, ParseException {
         Table table = new Table(tableName);
-        return table.showColumn(tableName, columnname);
-
+        return table.showColumn(tableName, columnName);
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

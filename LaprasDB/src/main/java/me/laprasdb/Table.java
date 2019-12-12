@@ -113,6 +113,27 @@ public class Table {
         return true;
     }
 
+    public String showTable(String tableName) throws IOException{
+        File dir = new File("tables/"+tableName);
+        JSONObject result;
+        //String prettyFormatted;
+        File[] matches = dir.listFiles(new FilenameFilter()
+        {
+            public boolean accept(File dir, String name)
+            {
+                return name.equals(tableName+".json");
+            }
+        });
+
+        if(matches.length==0){
+            throw new MyResourceNotFoundException("Trying to fetch a non-existing table");
+        }else{
+            result = new ObjectMapper().readValue(matches[0], JSONObject.class);
+        }
+
+        return result.toJSONString();
+    }
+
     public String showColumn(String tableName, String columnname) throws IOException {
 
         File dir = new File("tables/"+tableName);
@@ -150,7 +171,10 @@ public class Table {
                 });
                 result = new ObjectMapper().readValue(matches[0], HashMap.class);
                 ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-                res += ow.writeValueAsString(result)+",";
+                res += ow.writeValueAsString(result);
+                if (i != (fList.size() - 1)) {
+                    res += ",";
+                }
             }
         }
         res += "]";
