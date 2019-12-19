@@ -1,16 +1,17 @@
 package me.laprasdb;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import org.json.simple.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class Table {
 
@@ -111,4 +112,92 @@ public class Table {
 
         return true;
     }
+
+    public String showTable(String tableName) throws IOException{
+        File dir = new File("tables/"+tableName);
+        JSONObject result;
+        //String prettyFormatted;
+        File[] matches = dir.listFiles(new FilenameFilter()
+        {
+            public boolean accept(File dir, String name)
+            {
+                return name.equals(tableName+".json");
+            }
+        });
+
+        if(matches.length==0){
+            throw new MyResourceNotFoundException("Trying to fetch a non-existing table");
+        }else{
+            result = new ObjectMapper().readValue(matches[0], JSONObject.class);
+        }
+
+        return result.toJSONString();
+    }
+
+    public String showColumn(String tableName, String columnname) throws IOException {
+
+        File dir = new File("tables/"+tableName);
+        HashMap<String,HashMap<String,Object>> result;
+        Object column;
+        JSONObject col;
+        String target_file ;
+        List<String> fList = new ArrayList<String>();
+        File[] folderToScan = dir.listFiles();
+        String res="[";
+
+        for (int i = 0; i < folderToScan.length; i++) {
+            if (folderToScan[i].isFile()) {
+                target_file = folderToScan[i].getName();
+                if (target_file.startsWith(tableName+"_"+columnname)
+                        && target_file.endsWith(".json")) {
+
+                    fList.add(target_file);
+                }
+            }
+        }
+
+
+        if(fList.size()==0){
+            throw new Table.MyResourceNotFoundException("Trying to fetch a non-exixsting column");
+        }else{
+            for (int i = 0; i < fList.size(); i++){
+                String nm = fList.get(i);
+                File[] matches = dir.listFiles(new FilenameFilter()
+                {
+                    public boolean accept(File dir, String name)
+                    {
+                        return name.equals(nm);
+                    }
+                });
+                result = new ObjectMapper().readValue(matches[0], HashMap.class);
+                ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+                res += ow.writeValueAsString(result);
+                if (i != (fList.size() - 1)) {
+                    res += ",";
+                }
+            }
+        }
+        res += "]";
+        return res;
+
+
+    }
+
+    //Error handling functions
+    @ResponseStatus(value = HttpStatus.NOT_FOUND)
+    public class MyResourceNotFoundException extends RuntimeException {
+        public MyResourceNotFoundException() {
+            super();
+        }
+        public MyResourceNotFoundException(String message, Throwable cause) {
+            super(message, cause);
+        }
+        public MyResourceNotFoundException(String message) {
+            super(message);
+        }
+        public MyResourceNotFoundException(Throwable cause) {
+            super(cause);
+        }
+    }
+
 }
